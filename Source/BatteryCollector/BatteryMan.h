@@ -46,6 +46,8 @@ public:
 		class UPrimitiveComponent* otherComponent,
 		int32 otherBodyIndex, bool fromSweep, const FHitResult& sweepResult);
 
+	void RestartGame();
+
 protected:
 	// Called when the game starts or when spawned
 	virtual void BeginPlay() override;

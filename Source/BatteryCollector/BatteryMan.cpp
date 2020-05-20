@@ -10,6 +10,10 @@
 #include "GameFramework/CharacterMovementComponent.h"
 #include "GameFramework/Controller.h"
 #include "GameFramework/SpringArmComponent.h"
+#include "Components/SkeletalMeshComponent.h"
+#include "EnvironmentQuery/EnvQueryTypes.h"
+#include "GameFramework/Actor.h"
+#include "Kismet/GameplayStatics.h"
 
 ABatteryMan::ABatteryMan()
 {
@@ -93,6 +97,11 @@ void ABatteryMan::OnBeginOverlap(UPrimitiveComponent* hitComponent, AActor* othe
 	}
 }
 
+void ABatteryMan::RestartGame()
+{
+	UGameplayStatics::OpenLevel(this, FName(*GetWorld()->GetName()), false);
+}
+
 void ABatteryMan::BeginPlay()
 {
 	Super::BeginPlay();
@@ -116,6 +125,15 @@ void ABatteryMan::Tick(float DeltaTime)
 
 	// Decrease power
 	this->power -= DeltaTime * this->powerThreshold;
+
+	if (!this->isDead && this->power <= 0.0f)
+	{
+		this->isDead = true;
+		this->GetMesh()->SetSimulatePhysics(true);
+
+		FTimerHandle UnusedHandle;
+		GetWorldTimerManager().SetTimer(UnusedHandle, this, &ABatteryMan::RestartGame, 3.0f, false);
+	}
 }
 
 void ABatteryMan::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
