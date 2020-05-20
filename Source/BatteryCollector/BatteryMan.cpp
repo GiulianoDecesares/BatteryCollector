@@ -2,6 +2,8 @@
 
 
 #include "BatteryMan.h"
+
+#include "Blueprint/UserWidget.h"
 #include "Camera/CameraComponent.h"
 #include "Components/CapsuleComponent.h"
 #include "Components/InputComponent.h"
@@ -40,6 +42,7 @@ ABatteryMan::ABatteryMan()
     FollowCamera->bUsePawnControlRotation = false; // Camera does not rotate relative to arm
 
 	this->isDead = false;
+	this->power = 80.0f;
 }
 
 void ABatteryMan::MoveForward(float value)
@@ -77,7 +80,16 @@ void ABatteryMan::OnBeginOverlap(UPrimitiveComponent* hitComponent, AActor* othe
 {
 	if (otherActor->ActorHasTag("Recharge"))
 	{
-		UE_LOG(LogTemp, Warning, TEXT("Collided with battery"));
+		this->power += 10.0f;
+
+		if (this->power > 100.0f)
+		{
+			this->power = 100.0f;
+		}
+		
+		UE_LOG(LogTemp, Warning, TEXT("Current power is: %f"), this->power);
+
+		otherActor->Destroy();
 	}
 }
 
@@ -86,6 +98,16 @@ void ABatteryMan::BeginPlay()
 	Super::BeginPlay();
 	
 	this->GetCapsuleComponent()->OnComponentBeginOverlap.AddDynamic(this, &ABatteryMan::OnBeginOverlap);
+
+	if (this->powerWidgetClass != nullptr)
+	{
+		this->powerWidget = CreateWidget(GetWorld(), this->powerWidgetClass);
+
+		if (this->powerWidget != nullptr)
+		{
+			this->powerWidget->AddToViewport();
+		}
+	}
 }
 
 void ABatteryMan::Tick(float DeltaTime)

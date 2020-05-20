@@ -34,6 +34,11 @@ public:
 	UPROPERTY(EditAnywhere)
 	float powerThreshold;
 
+	UPROPERTY(EditAnywhere, Category="HUD")
+	TSubclassOf<UUserWidget> powerWidgetClass;
+
+	UUserWidget* powerWidget;
+
 	UFUNCTION()
 	void OnBeginOverlap(
 		class UPrimitiveComponent* hitComponent,
