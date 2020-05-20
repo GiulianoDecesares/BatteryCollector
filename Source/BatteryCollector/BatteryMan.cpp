@@ -72,9 +72,20 @@ void ABatteryMan::MoveRight(float value)
 	}
 }
 
+void ABatteryMan::OnBeginOverlap(UPrimitiveComponent* hitComponent, AActor* otherActor,
+	UPrimitiveComponent* otherComponent, int32 otherBodyIndex, bool fromSweep, const FHitResult& sweepResult)
+{
+	if (otherActor->ActorHasTag("Recharge"))
+	{
+		UE_LOG(LogTemp, Warning, TEXT("Collided with battery"));
+	}
+}
+
 void ABatteryMan::BeginPlay()
 {
 	Super::BeginPlay();
+	
+	this->GetCapsuleComponent()->OnComponentBeginOverlap.AddDynamic(this, &ABatteryMan::OnBeginOverlap);
 }
 
 void ABatteryMan::Tick(float DeltaTime)

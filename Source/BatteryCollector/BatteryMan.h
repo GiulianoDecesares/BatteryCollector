@@ -28,6 +28,19 @@ public:
 
 	bool isDead;
 
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
+	float power;
+
+	UPROPERTY(EditAnywhere)
+	float powerThreshold;
+
+	UFUNCTION()
+	void OnBeginOverlap(
+		class UPrimitiveComponent* hitComponent,
+		class AActor* otherActor,
+		class UPrimitiveComponent* otherComponent,
+		int32 otherBodyIndex, bool fromSweep, const FHitResult& sweepResult);
+
 protected:
 	// Called when the game starts or when spawned
 	virtual void BeginPlay() override;
