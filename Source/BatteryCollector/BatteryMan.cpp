@@ -9,7 +9,6 @@
 #include "GameFramework/Controller.h"
 #include "GameFramework/SpringArmComponent.h"
 
-// Sets default values
 ABatteryMan::ABatteryMan()
 {
  	// Set this character to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
@@ -39,26 +38,61 @@ ABatteryMan::ABatteryMan()
     FollowCamera = CreateDefaultSubobject<UCameraComponent>(TEXT("FollowCamera"));
     FollowCamera->SetupAttachment(CameraBoom, USpringArmComponent::SocketName); // Attach the camera to the end of the boom and let the boom adjust to match the controller orientation
     FollowCamera->bUsePawnControlRotation = false; // Camera does not rotate relative to arm
+
+	this->isDead = false;
 }
 
-// Called when the game starts or when spawned
+void ABatteryMan::MoveForward(float value)
+{
+	if (!this->isDead)
+	{
+		const FRotator rotation = this->Controller->GetControlRotation();
+		const FRotator yaw(0, rotation.Yaw, 0);
+
+		// Calculate forward vector
+		const FVector direction = FRotationMatrix(yaw).GetUnitAxis(EAxis::X);
+
+		// Move
+		this->AddMovementInput(direction, value);
+	}
+}
+
+void ABatteryMan::MoveRight(float value)
+{
+	if (!this->isDead)
+	{
+		const FRotator rotation = this->Controller->GetControlRotation();
+		const FRotator yaw(0, rotation.Yaw, 0);
+
+		// Calculate forward vector
+		const FVector direction = FRotationMatrix(yaw).GetUnitAxis(EAxis::Y);
+
+		// Move
+		this->AddMovementInput(direction, value);
+	}
+}
+
 void ABatteryMan::BeginPlay()
 {
 	Super::BeginPlay();
-	
 }
 
-// Called every frame
 void ABatteryMan::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
-
 }
 
-// Called to bind functionality to input
 void ABatteryMan::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
 {
 	Super::SetupPlayerInputComponent(PlayerInputComponent);
 
+	PlayerInputComponent->BindAxis("Turn", this, &APawn::AddControllerYawInput);
+	PlayerInputComponent->BindAxis("LookUp", this, &APawn::AddControllerPitchInput);
+
+	PlayerInputComponent->BindAction("Jump", IE_Pressed, this, &ACharacter::Jump);
+	PlayerInputComponent->BindAction("Jump", IE_Released, this, &ACharacter::StopJumping);
+
+	PlayerInputComponent->BindAxis("MoveForward", this, &ABatteryMan::MoveForward);
+	PlayerInputComponent->BindAxis("MoveRight", this, &ABatteryMan::MoveRight);
 }
 
