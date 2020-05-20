@@ -113,6 +113,9 @@ void ABatteryMan::BeginPlay()
 void ABatteryMan::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
+
+	// Decrease power
+	this->power -= DeltaTime * this->powerThreshold;
 }
 
 void ABatteryMan::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
