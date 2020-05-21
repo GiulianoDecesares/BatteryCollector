@@ -11,7 +11,6 @@
 #include "GameFramework/Controller.h"
 #include "GameFramework/SpringArmComponent.h"
 #include "Components/SkeletalMeshComponent.h"
-#include "EnvironmentQuery/EnvQueryTypes.h"
 #include "GameFramework/Actor.h"
 #include "Kismet/GameplayStatics.h"
 
