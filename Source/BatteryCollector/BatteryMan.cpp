@@ -3,16 +3,20 @@
 
 #include "BatteryMan.h"
 
+
+#include "BatteryPickup.h"
 #include "Blueprint/UserWidget.h"
 #include "Camera/CameraComponent.h"
 #include "Components/CapsuleComponent.h"
 #include "Components/InputComponent.h"
+#include "Components/SphereComponent.h"
 #include "GameFramework/CharacterMovementComponent.h"
 #include "GameFramework/Controller.h"
 #include "GameFramework/SpringArmComponent.h"
 #include "Components/SkeletalMeshComponent.h"
 #include "GameFramework/Actor.h"
 #include "Kismet/GameplayStatics.h"
+#include "Pickup.h"
 
 ABatteryMan::ABatteryMan()
 {
@@ -46,6 +50,16 @@ ABatteryMan::ABatteryMan()
 
 	this->isDead = false;
 	this->power = 80.0f;
+
+	this->movementSpeedMultiplier = 1.0f;
+
+	this->collectionSphere = CreateDefaultSubobject<USphereComponent>(TEXT("CollectionComponent"));
+	// this->collectionSphere = AttachTo(this->RootComponent);
+	this->collectionSphere->AttachTo(this->RootComponent);
+	this->collectionSphere->SetSphereRadius(200.0f);
+
+	this->initialPower = 2000.0f;
+	this->currentPower = this->initialPower;
 }
 
 void ABatteryMan::MoveForward(float value)
@@ -56,7 +70,7 @@ void ABatteryMan::MoveForward(float value)
 		const FRotator yaw(0, rotation.Yaw, 0);
 
 		// Calculate forward vector
-		const FVector direction = FRotationMatrix(yaw).GetUnitAxis(EAxis::X);
+		const FVector direction = FRotationMatrix(yaw).GetUnitAxis(EAxis::X) * this->movementSpeedMultiplier;
 
 		// Move
 		this->AddMovementInput(direction, value);
@@ -71,15 +85,25 @@ void ABatteryMan::MoveRight(float value)
 		const FRotator yaw(0, rotation.Yaw, 0);
 
 		// Calculate forward vector
-		const FVector direction = FRotationMatrix(yaw).GetUnitAxis(EAxis::Y);
+		const FVector direction = FRotationMatrix(yaw).GetUnitAxis(EAxis::Y) * this->movementSpeedMultiplier;
 
 		// Move
 		this->AddMovementInput(direction, value);
 	}
 }
 
+void ABatteryMan::Run()
+{
+	this->movementSpeedMultiplier = 5.0f;
+}
+
+void ABatteryMan::StopRunning()
+{
+	this->movementSpeedMultiplier = 1.0f;
+}
+
 void ABatteryMan::OnBeginOverlap(UPrimitiveComponent* hitComponent, AActor* otherActor,
-	UPrimitiveComponent* otherComponent, int32 otherBodyIndex, bool fromSweep, const FHitResult& sweepResult)
+                                 UPrimitiveComponent* otherComponent, int32 otherBodyIndex, bool fromSweep, const FHitResult& sweepResult)
 {
 	if (otherActor->ActorHasTag("Recharge"))
 	{
@@ -89,8 +113,6 @@ void ABatteryMan::OnBeginOverlap(UPrimitiveComponent* hitComponent, AActor* othe
 		{
 			this->power = 100.0f;
 		}
-		
-		UE_LOG(LogTemp, Warning, TEXT("Current power is: %f"), this->power);
 
 		otherActor->Destroy();
 	}
@@ -99,6 +121,26 @@ void ABatteryMan::OnBeginOverlap(UPrimitiveComponent* hitComponent, AActor* othe
 void ABatteryMan::RestartGame()
 {
 	UGameplayStatics::OpenLevel(this, FName(*GetWorld()->GetName()), false);
+}
+
+USphereComponent* ABatteryMan::GetCollectionSphere() const
+{
+	return this->collectionSphere;
+}
+
+float ABatteryMan::GetInitialPower() const
+{
+	return this->initialPower;
+}
+
+float ABatteryMan::GetCurrentPower() const
+{
+	return this->currentPower;
+}
+
+void ABatteryMan::UpdateCurrentPower(float delta)
+{
+	this->currentPower += delta;
 }
 
 void ABatteryMan::BeginPlay()
@@ -115,6 +157,37 @@ void ABatteryMan::BeginPlay()
 		{
 			this->powerWidget->AddToViewport();
 		}
+	}
+}
+
+void ABatteryMan::Collect()
+{
+	TArray<AActor*> collected;
+	this->collectionSphere->GetOverlappingActors(collected);
+
+	float collectedPower = 0.0f;
+
+	for (int index = 0; index < collected.Num(); index++)
+	{
+		APickup* const pickup = Cast<APickup>(collected[index]);
+
+		if (pickup != nullptr && !pickup->IsPendingKill() && pickup->IsActive())
+		{
+			ABatteryPickup* const batteryPickup = Cast<ABatteryPickup>(collected[index]);
+
+			if (batteryPickup != nullptr)
+			{
+				collectedPower += batteryPickup->GetPower();
+			}			
+			
+			pickup->WasCollected();
+			pickup->SetActive(false);
+		}
+	}
+
+	if (collectedPower != 0.0f)
+	{
+		this->UpdateCurrentPower(collectedPower);
 	}
 }
 
@@ -141,11 +214,13 @@ void ABatteryMan::SetupPlayerInputComponent(UInputComponent* PlayerInputComponen
 
 	PlayerInputComponent->BindAxis("Turn", this, &APawn::AddControllerYawInput);
 	PlayerInputComponent->BindAxis("LookUp", this, &APawn::AddControllerPitchInput);
+	PlayerInputComponent->BindAxis("MoveForward", this, &ABatteryMan::MoveForward);
+	PlayerInputComponent->BindAxis("MoveRight", this, &ABatteryMan::MoveRight);
 
 	PlayerInputComponent->BindAction("Jump", IE_Pressed, this, &ACharacter::Jump);
 	PlayerInputComponent->BindAction("Jump", IE_Released, this, &ACharacter::StopJumping);
-
-	PlayerInputComponent->BindAxis("MoveForward", this, &ABatteryMan::MoveForward);
-	PlayerInputComponent->BindAxis("MoveRight", this, &ABatteryMan::MoveRight);
+	PlayerInputComponent->BindAction("Run", IE_Pressed, this, &ABatteryMan::Run);
+	PlayerInputComponent->BindAction("Run", IE_Released, this, &ABatteryMan::StopRunning);
+	PlayerInputComponent->BindAction("Collect", IE_Pressed, this, &ABatteryMan::Collect);
 }
 

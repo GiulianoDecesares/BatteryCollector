@@ -6,38 +6,67 @@
 #include "GameFramework/Character.h"
 #include "BatteryMan.generated.h"
 
+class USphereComponent;
+
 UCLASS()
 class BATTERYCOLLECTOR_API ABatteryMan : public ACharacter
 {
+private:
 	GENERATED_BODY()
 
-public:
-	// Sets default values for this character's properties
-	ABatteryMan();
+	float movementSpeedMultiplier;
 
-	/** Camera boom positioning the camera behind the character */
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "", meta = (AllowPrivateAccess = true))
+	USphereComponent* collectionSphere;
+
+	UPROPERTY(VisibleAnywhere, Category = "Power")
+	float currentPower;
+
+protected:
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Power")
+	float initialPower;
+
+public:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Camera)
     class USpringArmComponent* CameraBoom;
 
-	/** Follow camera */
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Camera)
     class UCameraComponent* FollowCamera;
-
-	void MoveForward(float value);
-	void MoveRight(float value);
 
 	bool isDead;
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
-	float power;
+    float power;
 
 	UPROPERTY(EditAnywhere)
-	float powerThreshold;
+    float powerThreshold;
+	
+	UPROPERTY(EditAnywhere)
+    float runPowerThreshold;
 
 	UPROPERTY(EditAnywhere, Category="HUD")
-	TSubclassOf<UUserWidget> powerWidgetClass;
+    TSubclassOf<UUserWidget> powerWidgetClass;
 
 	UUserWidget* powerWidget;
+
+protected:
+	virtual void BeginPlay() override;
+
+	UFUNCTION(BlueprintCallable, Category = "Pickups")
+	void Collect();
+
+public:
+	ABatteryMan();
+	
+	virtual void Tick(float DeltaTime) override;
+
+	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
+
+	void MoveForward(float value);
+	void MoveRight(float value);
+
+	void Run();
+	void StopRunning();
 
 	UFUNCTION()
 	void OnBeginOverlap(
@@ -48,15 +77,19 @@ public:
 
 	void RestartGame();
 
-protected:
-	// Called when the game starts or when spawned
-	virtual void BeginPlay() override;
+	FORCEINLINE USphereComponent* GetCollectionSphere() const;
 
-public:	
-	// Called every frame
-	virtual void Tick(float DeltaTime) override;
+	UFUNCTION(BlueprintPure, Category = "Power")
+	float GetInitialPower() const;
 
-	// Called to bind functionality to input
-	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
+	UFUNCTION(BlueprintPure, Category = "Power")
+	float GetCurrentPower() const;
 
+	
+	/**
+	 * \brief Updates the current character power
+	 * \param delta Amount to use in the update, could be positive or negative
+	 */
+	UFUNCTION(BlueprintCallable, Category = "Power")
+	void UpdateCurrentPower(float delta);
 };
