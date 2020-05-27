@@ -23,8 +23,14 @@ private:
 	float currentPower;
 
 protected:
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Power")
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Power", meta = (BlueprintProtected = true))
 	float initialPower;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Power", meta = (BlueprintProtected = true))
+	float speedMultiplier;
+	
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Power", meta = (BlueprintProtected = true))
+	float baseSpeed;
 
 public:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Camera)
@@ -34,21 +40,7 @@ public:
     class UCameraComponent* FollowCamera;
 
 	bool isDead;
-
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
-    float power;
-
-	UPROPERTY(EditAnywhere)
-    float powerThreshold;
 	
-	UPROPERTY(EditAnywhere)
-    float runPowerThreshold;
-
-	UPROPERTY(EditAnywhere, Category="HUD")
-    TSubclassOf<UUserWidget> powerWidgetClass;
-
-	UUserWidget* powerWidget;
-
 protected:
 	virtual void BeginPlay() override;
 
@@ -65,16 +57,8 @@ public:
 	void MoveForward(float value);
 	void MoveRight(float value);
 
-	void Run();
-	void StopRunning();
-
-	UFUNCTION()
-	void OnBeginOverlap(
-		class UPrimitiveComponent* hitComponent,
-		class AActor* otherActor,
-		class UPrimitiveComponent* otherComponent,
-		int32 otherBodyIndex, bool fromSweep, const FHitResult& sweepResult);
-
+	// void Run();
+	// void StopRunning();
 	void RestartGame();
 
 	FORCEINLINE USphereComponent* GetCollectionSphere() const;
@@ -84,7 +68,6 @@ public:
 
 	UFUNCTION(BlueprintPure, Category = "Power")
 	float GetCurrentPower() const;
-
 	
 	/**
 	 * \brief Updates the current character power

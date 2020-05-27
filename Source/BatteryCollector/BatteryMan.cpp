@@ -49,17 +49,16 @@ ABatteryMan::ABatteryMan()
     FollowCamera->bUsePawnControlRotation = false; // Camera does not rotate relative to arm
 
 	this->isDead = false;
-	this->power = 80.0f;
-
-	this->movementSpeedMultiplier = 1.0f;
 
 	this->collectionSphere = CreateDefaultSubobject<USphereComponent>(TEXT("CollectionComponent"));
-	// this->collectionSphere = AttachTo(this->RootComponent);
 	this->collectionSphere->AttachTo(this->RootComponent);
 	this->collectionSphere->SetSphereRadius(200.0f);
 
 	this->initialPower = 2000.0f;
 	this->currentPower = this->initialPower;
+
+	this->speedMultiplier = 0.75f;
+	this->baseSpeed = 10.0f;
 }
 
 void ABatteryMan::MoveForward(float value)
@@ -70,7 +69,7 @@ void ABatteryMan::MoveForward(float value)
 		const FRotator yaw(0, rotation.Yaw, 0);
 
 		// Calculate forward vector
-		const FVector direction = FRotationMatrix(yaw).GetUnitAxis(EAxis::X) * this->movementSpeedMultiplier;
+		const FVector direction = FRotationMatrix(yaw).GetUnitAxis(EAxis::X);
 
 		// Move
 		this->AddMovementInput(direction, value);
@@ -85,38 +84,24 @@ void ABatteryMan::MoveRight(float value)
 		const FRotator yaw(0, rotation.Yaw, 0);
 
 		// Calculate forward vector
-		const FVector direction = FRotationMatrix(yaw).GetUnitAxis(EAxis::Y) * this->movementSpeedMultiplier;
+		const FVector direction = FRotationMatrix(yaw).GetUnitAxis(EAxis::Y);
 
 		// Move
 		this->AddMovementInput(direction, value);
 	}
 }
 
+/*
 void ABatteryMan::Run()
 {
-	this->movementSpeedMultiplier = 5.0f;
+	// this->movementSpeedMultiplier = 5.0f;
 }
 
 void ABatteryMan::StopRunning()
 {
-	this->movementSpeedMultiplier = 1.0f;
+	// this->movementSpeedMultiplier = 1.0f;
 }
-
-void ABatteryMan::OnBeginOverlap(UPrimitiveComponent* hitComponent, AActor* otherActor,
-                                 UPrimitiveComponent* otherComponent, int32 otherBodyIndex, bool fromSweep, const FHitResult& sweepResult)
-{
-	if (otherActor->ActorHasTag("Recharge"))
-	{
-		this->power += 10.0f;
-
-		if (this->power > 100.0f)
-		{
-			this->power = 100.0f;
-		}
-
-		otherActor->Destroy();
-	}
-}
+*/
 
 void ABatteryMan::RestartGame()
 {
@@ -141,23 +126,12 @@ float ABatteryMan::GetCurrentPower() const
 void ABatteryMan::UpdateCurrentPower(float delta)
 {
 	this->currentPower += delta;
+	this->GetCharacterMovement()->MaxWalkSpeed = this->baseSpeed + this->speedMultiplier * this->GetCurrentPower();
 }
 
 void ABatteryMan::BeginPlay()
 {
 	Super::BeginPlay();
-	
-	this->GetCapsuleComponent()->OnComponentBeginOverlap.AddDynamic(this, &ABatteryMan::OnBeginOverlap);
-
-	if (this->powerWidgetClass != nullptr)
-	{
-		this->powerWidget = CreateWidget(GetWorld(), this->powerWidgetClass);
-
-		if (this->powerWidget != nullptr)
-		{
-			this->powerWidget->AddToViewport();
-		}
-	}
 }
 
 void ABatteryMan::Collect()
@@ -195,16 +169,13 @@ void ABatteryMan::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
 
-	// Decrease power
-	this->power -= DeltaTime * this->powerThreshold;
-
-	if (!this->isDead && this->power <= 0.0f)
+	if (!this->isDead && this->GetCurrentPower() <= 0.0f)
 	{
 		this->isDead = true;
 		this->GetMesh()->SetSimulatePhysics(true);
 
 		FTimerHandle UnusedHandle;
-		GetWorldTimerManager().SetTimer(UnusedHandle, this, &ABatteryMan::RestartGame, 3.0f, false);
+		GetWorldTimerManager().SetTimer(UnusedHandle, this, &ABatteryMan::RestartGame, 2.0f, false);
 	}
 }
 
@@ -219,8 +190,8 @@ void ABatteryMan::SetupPlayerInputComponent(UInputComponent* PlayerInputComponen
 
 	PlayerInputComponent->BindAction("Jump", IE_Pressed, this, &ACharacter::Jump);
 	PlayerInputComponent->BindAction("Jump", IE_Released, this, &ACharacter::StopJumping);
-	PlayerInputComponent->BindAction("Run", IE_Pressed, this, &ABatteryMan::Run);
-	PlayerInputComponent->BindAction("Run", IE_Released, this, &ABatteryMan::StopRunning);
+	// PlayerInputComponent->BindAction("Run", IE_Pressed, this, &ABatteryMan::Run);
+	// PlayerInputComponent->BindAction("Run", IE_Released, this, &ABatteryMan::StopRunning);
 	PlayerInputComponent->BindAction("Collect", IE_Pressed, this, &ABatteryMan::Collect);
 }
 
