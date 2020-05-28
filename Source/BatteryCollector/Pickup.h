@@ -26,7 +26,7 @@ public:
 	
 	virtual void Tick(float DeltaTime) override;
 
-	FORCEINLINE class UStaticMeshComponent* GetMesh() const;
+	class UStaticMeshComponent* GetMesh() const;
 
 	UFUNCTION(BlueprintPure, Category = "Pickup")
 	bool IsActive() const;
