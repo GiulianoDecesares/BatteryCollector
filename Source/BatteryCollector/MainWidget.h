@@ -13,19 +13,5 @@ UCLASS()
 class BATTERYCOLLECTOR_API UMainWidget : public UUserWidget
 {
 private:
-	GENERATED_BODY()
-
-protected:
-
-	
-public:
-
-	
-private:
-
-	
-protected:
-	
-public:
-	
+	GENERATED_BODY()	
 };

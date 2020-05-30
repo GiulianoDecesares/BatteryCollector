@@ -20,6 +20,8 @@ private:
 
 	float movementSpeedMultiplier;
 
+	float drainRate;
+
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "", meta = (AllowPrivateAccess = true))
 	USphereComponent* collectionSphere;
 
@@ -31,10 +33,13 @@ protected:
 	float initialPower;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Power", meta = (BlueprintProtected = true))
-	float speedMultiplier;
+    float maxPower;
 	
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Power", meta = (BlueprintProtected = true))
 	float baseSpeed;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Power", meta = (BlueprintProtected = true))
+    float runSpeedMultiplier;
 
 public:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Camera)
@@ -64,8 +69,8 @@ public:
 	void MoveForward(float value);
 	void MoveRight(float value);
 
-	// void Run();
-	// void StopRunning();
+	void Run();
+	void StopRunning();
 	void RestartGame();
 
 	FORCEINLINE USphereComponent* GetCollectionSphere() const;
@@ -75,6 +80,9 @@ public:
 
 	UFUNCTION(BlueprintPure, Category = "Power")
 	float GetCurrentPower() const;
+
+	UFUNCTION(BlueprintPure, Category = "Power")
+    float GetMaxPower() const;
 	
 	/**
 	 * \brief Updates the current character power

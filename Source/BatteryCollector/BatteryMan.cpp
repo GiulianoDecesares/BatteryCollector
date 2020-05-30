@@ -3,7 +3,6 @@
 
 #include "BatteryMan.h"
 
-
 #include "BatteryPickup.h"
 #include "Blueprint/UserWidget.h"
 #include "Camera/CameraComponent.h"
@@ -59,10 +58,11 @@ ABatteryMan::ABatteryMan()
 	this->collectionSphere->OnComponentEndOverlap.AddDynamic(this, &ABatteryMan::OnOverlapEnd);
 
 	this->initialPower = 2000.0f;
+	this->maxPower = 0.0f;
 	this->currentPower = this->initialPower;
 
-	this->speedMultiplier = 0.75f;
 	this->baseSpeed = 10.0f;
+	this->drainRate = 0.0f;
 }
 
 void ABatteryMan::MoveForward(float value)
@@ -95,17 +95,17 @@ void ABatteryMan::MoveRight(float value)
 	}
 }
 
-/*
 void ABatteryMan::Run()
 {
-	// this->movementSpeedMultiplier = 5.0f;
+	this->drainRate = 0.5f;
+	this->GetCharacterMovement()->MaxWalkSpeed = this->baseSpeed * this->runSpeedMultiplier;
 }
 
 void ABatteryMan::StopRunning()
 {
-	// this->movementSpeedMultiplier = 1.0f;
+	this->drainRate = 0.0f;
+	this->GetCharacterMovement()->MaxWalkSpeed = this->baseSpeed;
 }
-*/
 
 void ABatteryMan::RestartGame()
 {
@@ -127,10 +127,14 @@ float ABatteryMan::GetCurrentPower() const
 	return this->currentPower;
 }
 
+float ABatteryMan::GetMaxPower() const
+{
+	return this->maxPower;
+}
+
 void ABatteryMan::UpdateCurrentPower(float delta)
 {
 	this->currentPower += delta;
-	this->GetCharacterMovement()->MaxWalkSpeed = this->baseSpeed + this->speedMultiplier * this->GetCurrentPower();
 }
 
 void ABatteryMan::OnOverlapBegin(UPrimitiveComponent* overlappedComponent, AActor* other,
@@ -158,6 +162,8 @@ void ABatteryMan::OnOverlapEnd(UPrimitiveComponent* overlappedComponent, AActor*
 void ABatteryMan::BeginPlay()
 {
 	Super::BeginPlay();
+
+	this->GetCharacterMovement()->MaxWalkSpeed = this->baseSpeed;
 }
 
 void ABatteryMan::Collect()
@@ -195,6 +201,12 @@ void ABatteryMan::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
 
+	// Drain over movement speed
+	if (this->drainRate > 0.0f)
+	{
+		this->UpdateCurrentPower(- DeltaTime * this->drainRate * this->GetInitialPower());	
+	}
+
 	if (!this->isDead && this->GetCurrentPower() <= 0.0f)
 	{
 		this->isDead = true;
@@ -216,8 +228,8 @@ void ABatteryMan::SetupPlayerInputComponent(UInputComponent* PlayerInputComponen
 
 	PlayerInputComponent->BindAction("Jump", IE_Pressed, this, &ACharacter::Jump);
 	PlayerInputComponent->BindAction("Jump", IE_Released, this, &ACharacter::StopJumping);
-	// PlayerInputComponent->BindAction("Run", IE_Pressed, this, &ABatteryMan::Run);
-	// PlayerInputComponent->BindAction("Run", IE_Released, this, &ABatteryMan::StopRunning);
+	PlayerInputComponent->BindAction("Run", IE_Pressed, this, &ABatteryMan::Run);
+	PlayerInputComponent->BindAction("Run", IE_Released, this, &ABatteryMan::StopRunning);
 	PlayerInputComponent->BindAction("Collect", IE_Pressed, this, &ABatteryMan::Collect);
 }
 
