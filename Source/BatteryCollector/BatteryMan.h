@@ -7,6 +7,10 @@
 #include "BatteryMan.generated.h"
 
 class USphereComponent;
+class UPrimitiveComponent;
+class AActor;
+
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FInteractionHint, FString, HintName, bool, ShowHint);
 
 UCLASS()
 class BATTERYCOLLECTOR_API ABatteryMan : public ACharacter
@@ -38,6 +42,9 @@ public:
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Camera)
     class UCameraComponent* FollowCamera;
+
+	UPROPERTY(VisibleAnywhere, BlueprintAssignable)
+	FInteractionHint InteractionHintEvent;
 
 	bool isDead;
 	
@@ -75,4 +82,10 @@ public:
 	 */
 	UFUNCTION(BlueprintCallable, Category = "Power")
 	void UpdateCurrentPower(float delta);
+
+	UFUNCTION()
+	void OnOverlapBegin(UPrimitiveComponent* overlappedComponent, AActor* other, UPrimitiveComponent* otherComponent, int32 otherBobyIndex, bool fromSweep, const FHitResult& sweepResult);
+
+	UFUNCTION()
+	void OnOverlapEnd(UPrimitiveComponent* overlappedComponent, AActor* other, UPrimitiveComponent* otherComponent, int32 otherBodyIndex);
 };

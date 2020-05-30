@@ -51,3 +51,8 @@ void APickup::WasCollected_Implementation()
 	UE_LOG(LogClass, Log, TEXT("%s collected"), *this->GetName());
 }
 
+bool APickup::NeedsHint() const
+{
+	return this->needsHint;
+}
+

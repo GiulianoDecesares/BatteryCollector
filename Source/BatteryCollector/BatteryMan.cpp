@@ -54,6 +54,10 @@ ABatteryMan::ABatteryMan()
 	this->collectionSphere->AttachTo(this->RootComponent);
 	this->collectionSphere->SetSphereRadius(200.0f);
 
+	// Bind overlap events
+	this->collectionSphere->OnComponentBeginOverlap.AddDynamic(this, &ABatteryMan::OnOverlapBegin);
+	this->collectionSphere->OnComponentEndOverlap.AddDynamic(this, &ABatteryMan::OnOverlapEnd);
+
 	this->initialPower = 2000.0f;
 	this->currentPower = this->initialPower;
 
@@ -127,6 +131,28 @@ void ABatteryMan::UpdateCurrentPower(float delta)
 {
 	this->currentPower += delta;
 	this->GetCharacterMovement()->MaxWalkSpeed = this->baseSpeed + this->speedMultiplier * this->GetCurrentPower();
+}
+
+void ABatteryMan::OnOverlapBegin(UPrimitiveComponent* overlappedComponent, AActor* other,
+	UPrimitiveComponent* otherComponent, int32 otherBobyIndex, bool fromSweep, const FHitResult& sweepResult)
+{
+	APickup* const pickup = Cast<APickup>(other);
+
+	if (pickup != nullptr && pickup->NeedsHint())
+	{
+		this->InteractionHintEvent.Broadcast("Pickup", true);
+	}
+}
+
+void ABatteryMan::OnOverlapEnd(UPrimitiveComponent* overlappedComponent, AActor* other,
+	UPrimitiveComponent* otherComponent, int32 otherBodyIndex)
+{
+	APickup* const pickup = Cast<APickup>(other);
+
+	if (pickup != nullptr && pickup->NeedsHint())
+	{
+		this->InteractionHintEvent.Broadcast("Pickup", false);
+	}
 }
 
 void ABatteryMan::BeginPlay()

@@ -15,6 +15,9 @@ private:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Pickup", meta = (AllowPrivateAccess = true))
     class UStaticMeshComponent* pickupMesh;
 
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Pickup", meta = (AllowPrivateAccess = true))
+	bool needsHint;
+
 protected:
 	bool isActive;
 
@@ -37,4 +40,6 @@ public:
 	UFUNCTION(BlueprintNativeEvent)
 	void WasCollected();
 	virtual void WasCollected_Implementation();
+
+	bool NeedsHint() const;
 };
